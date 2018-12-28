@@ -6,24 +6,28 @@ var _ = require('underscore');
 // TODO handle dev & prod environments?
 var WEBPACK_CONFIG = require('./webpack.config.js');
 
-exports.generateBundle = function(pluginParts) {
+exports.generateBundle = function(pluginParts, done) {
+  exports.buildIndexAndGenerateBundle(pluginParts, saveIndexFile, generateDistributionFile, done);
+}
+
+// Expose this method to be able to test it
+exports.buildIndexAndGenerateBundle = function(pluginParts, saveClientIndex, generateBundledFile, done) {
   var allClientHooks = getAllClientHooks(pluginParts);
   var filesToBundle = getListOfFilesToBundle(allClientHooks);
 
-  generateClientIndex(filesToBundle, function(err) {
-    // TODO handle error when generating file
+  generateClientIndex(filesToBundle, saveClientIndex, function(err) {
     if (err) {
-      throw err;
+      done(err);
+    } else {
+      generateBundledFile(function(err) {
+        if (err) {
+          done(err);
+        } else {
+          replaceOriginalHookWithBundledHooks(allClientHooks, filesToBundle);
+          done();
+        }
+      });
     }
-
-    generateDistributionFile(function(err, stats) {
-      // TODO handle error when generating bundle
-      if (err || stats.hasErrors()) {
-        throw err || stats.compilation.errors;
-      } else {
-        replaceOriginalHookWithBundledHooks(allClientHooks, filesToBundle);
-      }
-    });
   });
 }
 
@@ -48,6 +52,8 @@ exports.generateBundle = function(pluginParts) {
 var getAllClientHooks = function(pluginParts) {
   return _(pluginParts)
     .chain()
+    // remove ep_webpack to avoid circular dependency
+    .reject(function(part) { return part.name === 'ep_webpack' })
     .map(function(part) { return part.client_hooks })
     // remove parts without client hooks
     .compact()
@@ -107,30 +113,42 @@ var getListOfFilesToBundle = function(allClientHooks) {
     exports.f2 = require("ep_myplugin2/static/js/index");
     (...)
 */
-var generateClientIndex = function(filesToBundle, done) {
+var generateClientIndex = function(filesToBundle, saveClientIndex, done) {
   var fileContent = _(filesToBundle).map(function(file, index) {
     return 'exports.f' + index + ' = require("' + file + '");';
   }).join('\n');
 
+  saveClientIndex(fileContent, done);
+}
+
+var saveIndexFile = function(fileContent, done) {
   var clientIndexPath = path.normalize(path.join(__dirname, 'static/js/index.js'));
   fs.writeFile(clientIndexPath, fileContent, done);
 }
 
 var generateDistributionFile = function(done) {
-  webpack(WEBPACK_CONFIG, done);
+  webpack(WEBPACK_CONFIG, function(err, stats) {
+    if (err || stats.hasErrors()) {
+      done(err || stats.compilation.errors);
+    } else {
+      done();
+    }
+  });
 }
 
 var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles) {
   _(allClientHooks).each(function(thisPluginHooks) {
     _(thisPluginHooks).each(function(hookPath, hookName) {
       // hookPath might have an alias to the function name, so remove it
-      var filePath = hookPath.split(':')[0];
+      var hookParts = hookPath.split(':');
+      var filePath = hookParts[0];
+      var hookAlias = hookParts[1] || hookName;
 
       // each bundled file was aliased `f#`, where `#` is its index on `bundledFiles`
       var fileAlias = `f${bundledFiles.indexOf(filePath)}`;
 
       // ex: postAceInit = "ep_webpack/static/js/dist/index:f17.postAceInit"
-      thisPluginHooks[hookName] = `ep_webpack/static/js/dist/index:${fileAlias}.${hookName}`;
+      thisPluginHooks[hookName] = `ep_webpack/static/js/dist/index:${fileAlias}.${hookAlias}`;
     });
   })
 }

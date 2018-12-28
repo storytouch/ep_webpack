@@ -23,9 +23,14 @@ var buildBundle = function() {
   // restore original plugin parts, so we can re-generate using them as reference
   plugins.parts = deepCopyOf(originalParts);
 
-  bundler.generateBundle(plugins.parts, function() {
-    // re-generate hooks, so the new source is retrieved when pad is loaded.
-    // This line was copied from `plugins.update()`.
-    plugins.hooks = pluginUtils.extractHooks(plugins.parts, "hooks", plugins.pathNormalization);
+  bundler.generateBundle(plugins.parts, function(err) {
+    // TODO handle error when generating bundle
+    if (err) {
+      throw err;
+    } else {
+      // re-generate hooks, so the new source is retrieved when pad is loaded.
+      // This line was copied from `plugins.update()`.
+      plugins.hooks = pluginUtils.extractHooks(plugins.parts, "hooks", plugins.pathNormalization);
+    }
   });
 }
