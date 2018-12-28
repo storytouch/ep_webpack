@@ -1,0 +1,10 @@
+{
+  "parts": [
+    {
+      "name": "ep_webpack",
+      "hooks": {
+        "loadSettings": "ep_webpack/index"
+      }
+    }
+  ]
+}
