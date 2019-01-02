@@ -15,13 +15,13 @@ describe('Plugin Bundler', function() {
   // do nothing
   var generateBundledFile = function(done) { done() };
 
-  var subject = function(pluginParts, done) {
-    buildIndexAndGenerateBundle(pluginParts, saveClientIndex, generateBundledFile, done);
+  var subject = function(pluginParts, partsToBeIgnored, done) {
+    buildIndexAndGenerateBundle(pluginParts, partsToBeIgnored, saveClientIndex, generateBundledFile, done);
   }
 
   context('when plugin has no client hook', function() {
     before(function(done) {
-      subject([plugins.ep_plugin_with_no_client_hooks], done);
+      subject([plugins.ep_plugin_with_no_client_hooks], [], done);
     });
 
     it('ignores the plugin', function() {
@@ -29,9 +29,19 @@ describe('Plugin Bundler', function() {
     });
   });
 
+  context('when plugin should be ignored', function() {
+    before(function(done) {
+      subject([plugins.ep_plugin_to_be_ignored], ['ep_plugin_to_be_ignored'], done);
+    });
+
+    it('does not list the plugin hooks', function() {
+      expect(lastClientIndex).to.eq('');
+    });
+  });
+
   context('when a single file has multiple client hooks', function() {
     before(function(done) {
-      subject([plugins.ep_plugin_with_multiple_hooks_on_same_file], done);
+      subject([plugins.ep_plugin_with_multiple_hooks_on_same_file], [], done);
     });
 
     it('lists the file only once', function() {
@@ -45,7 +55,7 @@ describe('Plugin Bundler', function() {
   // avoid circular dependency
   context('when ep_webpack has client hooks', function() {
     before(function(done) {
-      subject([plugins.ep_webpack], done);
+      subject([plugins.ep_webpack], [], done);
     });
 
     it('ignores them', function() {
@@ -53,14 +63,14 @@ describe('Plugin Bundler', function() {
     });
   });
 
-  describe('when plugin has hook alias', function() {
+  describe('when plugin uses an alias for a hook', function() {
     var nonAliasedPlugin = plugins.ep_regular_plugin;
     var aliasedPlugin = plugins.ep_plugin_with_alias_for_hook;
     var hookName = 'hook1';
     var hookAlias = 'alias_for_hook1';
 
     before(function(done) {
-      subject([nonAliasedPlugin, aliasedPlugin], done);
+      subject([nonAliasedPlugin, aliasedPlugin], [], done);
     });
 
     it('lists all files on the client index of provided plugins', function() {

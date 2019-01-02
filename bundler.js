@@ -6,13 +6,13 @@ var _ = require('underscore');
 // TODO handle dev & prod environments?
 var WEBPACK_CONFIG = require('./webpack.config.js');
 
-exports.generateBundle = function(pluginParts, done) {
-  exports.buildIndexAndGenerateBundle(pluginParts, saveIndexFile, generateDistributionFile, done);
+exports.generateBundle = function(pluginParts, partsToBeIgnored, done) {
+  exports.buildIndexAndGenerateBundle(pluginParts, partsToBeIgnored, saveIndexFile, generateDistributionFile, done);
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, saveClientIndex, generateBundledFile, done) {
-  var allClientHooks = getAllClientHooks(pluginParts);
+exports.buildIndexAndGenerateBundle = function(pluginParts, partsToBeIgnored, saveClientIndex, generateBundledFile, done) {
+  var allClientHooks = getAllClientHooks(pluginParts, partsToBeIgnored);
   var filesToBundle = getListOfFilesToBundle(allClientHooks);
 
   generateClientIndex(filesToBundle, saveClientIndex, function(err) {
@@ -49,11 +49,13 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, saveClientIndex, gen
       (...)
     }
 */
-var getAllClientHooks = function(pluginParts) {
+var getAllClientHooks = function(pluginParts, partsToBeIgnored) {
+  // ignore ep_webpack to avoid circular dependency
+  var partsToBeFiltered = _.union(['ep_webpack'], partsToBeIgnored);
+
   return _(pluginParts)
     .chain()
-    // remove ep_webpack to avoid circular dependency
-    .reject(function(part) { return part.name === 'ep_webpack' })
+    .reject(function(part) { return partsToBeFiltered.includes(part.name) })
     .map(function(part) { return part.client_hooks })
     // remove parts without client hooks
     .compact()

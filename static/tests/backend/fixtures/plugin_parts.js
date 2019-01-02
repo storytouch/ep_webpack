@@ -12,6 +12,13 @@ exports.ep_regular_plugin = {
   }
 }
 
+exports.ep_plugin_to_be_ignored = {
+  name: "ep_plugin_to_be_ignored",
+  client_hooks: {
+    hook1: "ep_plugin_to_be_ignored/static/js/index"
+  }
+}
+
 exports.ep_plugin_with_alias_for_hook = {
   name: "ep_plugin_with_alias_for_hook",
   client_hooks: {

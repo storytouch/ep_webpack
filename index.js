@@ -9,21 +9,26 @@ exports.pluginInstall = function(hook, context) {}
 
 // build bundle for the first time
 exports.loadSettings = function(hook, context) {
+  var settings = context.settings;
+  var mySettings = settings.ep_webpack || {};
+
   // store a copy of original plugin parts, so we can re-generate them later
   originalParts = deepCopyOf(plugins.parts);
 
-  buildBundle();
+  buildBundle(mySettings);
 }
 
 var deepCopyOf = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-var buildBundle = function() {
+var buildBundle = function(settings) {
+  var partsToBeIgnored = settings.ignoredParts || [];
+
   // restore original plugin parts, so we can re-generate using them as reference
   plugins.parts = deepCopyOf(originalParts);
 
-  bundler.generateBundle(plugins.parts, function(err) {
+  bundler.generateBundle(plugins.parts, partsToBeIgnored, function(err) {
     // TODO handle error when generating bundle
     if (err) {
       throw err;
