@@ -50,12 +50,9 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, partsToBeIgnored, sa
     }
 */
 var getAllClientHooks = function(pluginParts, partsToBeIgnored) {
-  // ignore ep_webpack to avoid circular dependency
-  var partsToBeFiltered = _.union(['ep_webpack'], partsToBeIgnored);
-
   return _(pluginParts)
     .chain()
-    .reject(function(part) { return partsToBeFiltered.includes(part.name) })
+    .reject(function(part) { return partsToBeIgnored.includes(part.name) })
     .map(function(part) { return part.client_hooks })
     // remove parts without client hooks
     .compact()

@@ -2,6 +2,9 @@
   "parts": [
     {
       "name": "ep_webpack",
+      "client_hooks": {
+        "postAceInit": "ep_webpack/static/js/testHelper"
+      },
       "hooks": {
         "loadSettings": "ep_webpack/index"
       }

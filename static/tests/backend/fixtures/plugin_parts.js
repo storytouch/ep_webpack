@@ -1,10 +1,3 @@
-exports.ep_webpack = {
-  name: "ep_webpack",
-  client_hooks: {
-    hook1: "ep_webpack/static/js/index"
-  }
-}
-
 exports.ep_regular_plugin = {
   name: "ep_regular_plugin",
   client_hooks: {

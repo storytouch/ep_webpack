@@ -52,17 +52,6 @@ describe('Plugin Bundler', function() {
     });
   });
 
-  // avoid circular dependency
-  context('when ep_webpack has client hooks', function() {
-    before(function(done) {
-      subject([plugins.ep_webpack], [], done);
-    });
-
-    it('ignores them', function() {
-      expect(lastClientIndex).to.not.contain('ep_webpack');
-    });
-  });
-
   describe('when plugin uses an alias for a hook', function() {
     var nonAliasedPlugin = plugins.ep_regular_plugin;
     var aliasedPlugin = plugins.ep_plugin_with_alias_for_hook;
