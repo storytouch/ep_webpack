@@ -12,11 +12,14 @@ module.exports = {
     libraryTarget: 'commonjs2',
   },
 
-  // use the correct reference when files refer to `jQuery` or `$`
   plugins: [
     new webpack.ProvidePlugin({
+      // use the correct reference when files refer to `jQuery` or `$`
       $: ['ep_etherpad-lite/static/js/rjquery', '$'],
       jQuery: ['ep_etherpad-lite/static/js/rjquery', 'jQuery'],
+      // autocomp is defined as a variable on window, other plugins need to
+      // require it when they use that variable
+      autocomp: ['ep_autocomp/static/js/index', 'autocomp'],
     }),
   ],
 

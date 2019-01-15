@@ -4,14 +4,23 @@ var webpack = require('webpack');
 var _ = require('underscore');
 
 // TODO handle dev & prod environments?
-var WEBPACK_CONFIG = require('./webpack.config.js');
+var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
 
-exports.generateBundle = function(pluginParts, partsToBeIgnored, done) {
-  exports.buildIndexAndGenerateBundle(pluginParts, partsToBeIgnored, saveIndexFile, generateDistributionFile, done);
+exports.generateBundle = function(pluginParts, mySettings, done) {
+  exports.buildIndexAndGenerateBundle(
+    pluginParts,
+    mySettings,
+    saveIndexFile,
+    generateDistributionFile,
+    done,
+  );
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, partsToBeIgnored, saveClientIndex, generateBundledFile, done) {
+exports.buildIndexAndGenerateBundle = function(pluginParts, mySettings, saveClientIndex, generateBundledFile, done) {
+  var partsToBeIgnored = mySettings.ignoredParts || [];
+  var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile);
+
   var allClientHooks = getAllClientHooks(pluginParts, partsToBeIgnored);
   var filesToBundle = getListOfFilesToBundle(allClientHooks);
 
@@ -19,7 +28,7 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, partsToBeIgnored, sa
     if (err) {
       done(err);
     } else {
-      generateBundledFile(function(err) {
+      generateBundledFile(webpackConfigs, function(err) {
         if (err) {
           done(err);
         } else {
@@ -29,6 +38,11 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, partsToBeIgnored, sa
       });
     }
   });
+}
+
+var buildWebpackConfigs = function(customConfigFile) {
+  var webpackConfigFile = customConfigFile || DEFAULT_WEBPACK_CONFIG;
+  return require(webpackConfigFile)
 }
 
 /*
@@ -125,8 +139,8 @@ var saveIndexFile = function(fileContent, done) {
   fs.writeFile(clientIndexPath, fileContent, done);
 }
 
-var generateDistributionFile = function(done) {
-  webpack(WEBPACK_CONFIG, function(err, stats) {
+var generateDistributionFile = function(webpackConfigs, done) {
+  webpack(webpackConfigs, function(err, stats) {
     if (err || stats.hasErrors()) {
       done(err || stats.compilation.errors);
     } else {

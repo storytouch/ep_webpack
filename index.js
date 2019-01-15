@@ -23,12 +23,10 @@ var deepCopyOf = function(obj) {
 }
 
 var buildBundle = function(settings) {
-  var partsToBeIgnored = settings.ignoredParts || [];
-
   // restore original plugin parts, so we can re-generate using them as reference
   plugins.parts = deepCopyOf(originalParts);
 
-  bundler.generateBundle(plugins.parts, partsToBeIgnored, function(err) {
+  bundler.generateBundle(plugins.parts, settings, function(err) {
     // TODO handle error when generating bundle
     if (err) {
       throw err;

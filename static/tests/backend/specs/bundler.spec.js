@@ -13,10 +13,11 @@ describe('Plugin Bundler', function() {
   }
 
   // do nothing
-  var generateBundledFile = function(done) { done() };
+  var generateBundledFile = function(webpackConfigs, done) { done() };
 
   var subject = function(pluginParts, partsToBeIgnored, done) {
-    buildIndexAndGenerateBundle(pluginParts, partsToBeIgnored, saveClientIndex, generateBundledFile, done);
+    var settings = { ignoredParts: partsToBeIgnored };
+    buildIndexAndGenerateBundle(pluginParts, settings, saveClientIndex, generateBundledFile, done);
   }
 
   context('when plugin has no client hook', function() {
