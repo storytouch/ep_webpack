@@ -1,8 +1,10 @@
-const path = require('path');
+var path = require('path');
 var webpack = require('webpack');
 
+var isProduction = process.env.NODE_ENV !== 'development';
+
 module.exports = {
-  mode: 'development',
+  mode: isProduction ? 'production' : 'development',
   entry: path.resolve(__dirname, 'static/js/index.js'),
 
   output: {
@@ -22,6 +24,13 @@ module.exports = {
       autocomp: ['ep_autocomp/static/js/index', 'autocomp'],
     }),
   ],
+
+  watchOptions: isProduction ? {} : {
+    // optimize pooling: don't check dependencies + wait a little bit to check.
+    // This avoids having the CPU melting when we have watch mode turned on
+    ignored: /ep_*\/node_modules/,
+    poll: 600
+  },
 
   // Disable AMD for jQuery plugins
   module: {
