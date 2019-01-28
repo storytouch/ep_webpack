@@ -9,13 +9,10 @@ exports.pluginInstall = function(hook, context) {}
 
 // build bundle for the first time
 exports.loadSettings = function(hook, context) {
-  var settings = context.settings;
-  var mySettings = settings.ep_webpack || {};
-
   // store a copy of original plugin parts, so we can re-generate them later
   originalParts = deepCopyOf(plugins.parts);
 
-  buildBundle(mySettings);
+  buildBundle(context.settings);
 }
 
 var deepCopyOf = function(obj) {

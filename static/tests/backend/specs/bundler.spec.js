@@ -12,70 +12,116 @@ describe('Plugin Bundler', function() {
     done();
   }
 
-  // do nothing
-  var generateBundledFile = function(webpackConfigs, done) { done() };
+  // store webpackConfigs content, so we can verify it later
+  var lastWebpackConfigs;
+  var generateBundledFile = function(webpackConfigs, done) {
+    lastWebpackConfigs = webpackConfigs;
+    done();
+  };
 
-  var subject = function(pluginParts, partsToBeIgnored, done) {
-    var settings = { ignoredParts: partsToBeIgnored };
-    buildIndexAndGenerateBundle(pluginParts, settings, saveClientIndex, generateBundledFile, done);
-  }
+  describe('webpack configs used to bundle files', function() {
+    var subject = function(otherSettings, done) {
+      var pluginParts = [];
+      var partsToBeIgnored = [];
+      var mySettings = { ignoredParts: partsToBeIgnored };
+      var settings = Object.assign({}, otherSettings, { ep_webpack: mySettings });
+      buildIndexAndGenerateBundle(pluginParts, settings, saveClientIndex, generateBundledFile, done);
+    }
 
-  context('when plugin has no client hook', function() {
-    before(function(done) {
-      subject([plugins.ep_plugin_with_no_client_hooks], [], done);
+    context('when settings has "minify" flag turned on', function() {
+      before(function(done) {
+        subject({ minify: true }, done);
+      });
+
+      it('has minimization turned on', function() {
+        expect(lastWebpackConfigs.optimization).to.not.eq(undefined);
+        expect(lastWebpackConfigs.optimization.minimize).to.eq(true);
+      });
+
+      it('has devtool configured', function() {
+        expect(lastWebpackConfigs.devtool).to.not.eq(undefined);
+      });
     });
 
-    it('ignores the plugin', function() {
-      expect(lastClientIndex).to.eq('');
+    context('when settings has "minify" flag turned off', function() {
+      before(function(done) {
+        subject({ minify: false }, done);
+      });
+
+      it('does not have minimization', function() {
+        expect(lastWebpackConfigs.optimization).to.eq(undefined);
+      });
+
+      it('does not have devtool', function() {
+        expect(lastWebpackConfigs.devtool).to.eq(undefined);
+      });
     });
   });
 
-  context('when plugin should be ignored', function() {
-    before(function(done) {
-      subject([plugins.ep_plugin_to_be_ignored], ['ep_plugin_to_be_ignored'], done);
+  describe('generated index.js file', function() {
+    var subject = function(pluginParts, partsToBeIgnored, done) {
+      var mySettings = { ignoredParts: partsToBeIgnored };
+      var settings = { ep_webpack: mySettings };
+      buildIndexAndGenerateBundle(pluginParts, settings, saveClientIndex, generateBundledFile, done);
+    }
+
+    context('when plugin has no client hook', function() {
+      before(function(done) {
+        subject([plugins.ep_plugin_with_no_client_hooks], [], done);
+      });
+
+      it('ignores the plugin', function() {
+        expect(lastClientIndex).to.eq('');
+      });
     });
 
-    it('does not list the plugin hooks', function() {
-      expect(lastClientIndex).to.eq('');
-    });
-  });
+    context('when plugin should be ignored', function() {
+      before(function(done) {
+        subject([plugins.ep_plugin_to_be_ignored], ['ep_plugin_to_be_ignored'], done);
+      });
 
-  context('when a single file has multiple client hooks', function() {
-    before(function(done) {
-      subject([plugins.ep_plugin_with_multiple_hooks_on_same_file], [], done);
-    });
-
-    it('lists the file only once', function() {
-      var file = 'ep_plugin_with_multiple_hooks_on_same_file/static/js/index';
-      var fileRegexp = new RegExp(file, 'g');
-      var numberOfFileOccurrences = lastClientIndex.match(fileRegexp).length;
-      expect(numberOfFileOccurrences).to.eq(1);
-    });
-  });
-
-  describe('when plugin uses an alias for a hook', function() {
-    var nonAliasedPlugin = plugins.ep_regular_plugin;
-    var aliasedPlugin = plugins.ep_plugin_with_alias_for_hook;
-    var hookName = 'hook1';
-    var hookAlias = 'alias_for_hook1';
-
-    before(function(done) {
-      subject([nonAliasedPlugin, aliasedPlugin], [], done);
+      it('does not list the plugin hooks', function() {
+        expect(lastClientIndex).to.eq('');
+      });
     });
 
-    it('lists all files on the client index of provided plugins', function() {
-      expect(lastClientIndex).to.contain('ep_regular_plugin/static/js/index');
-      // make sure alias was removed from file name
-      expect(lastClientIndex).to.contain('ep_plugin_with_alias_for_hook/static/js/index');
-      expect(lastClientIndex).to.not.contain('ep_plugin_with_alias_for_hook/static/js/index:');
+    context('when a single file has multiple client hooks', function() {
+      before(function(done) {
+        subject([plugins.ep_plugin_with_multiple_hooks_on_same_file], [], done);
+      });
+
+      it('lists the file only once', function() {
+        var file = 'ep_plugin_with_multiple_hooks_on_same_file/static/js/index';
+        var fileRegexp = new RegExp(file, 'g');
+        var numberOfFileOccurrences = lastClientIndex.match(fileRegexp).length;
+        expect(numberOfFileOccurrences).to.eq(1);
+      });
     });
 
-    it('maps non-aliased hooks to the hook name', function() {
-      expect(nonAliasedPlugin.client_hooks[hookName]).to.eq(`${distFile}:f0.${hookName}`);
-    });
+    describe('when plugin uses an alias for a hook', function() {
+      var nonAliasedPlugin = plugins.ep_regular_plugin;
+      var aliasedPlugin = plugins.ep_plugin_with_alias_for_hook;
+      var hookName = 'hook1';
+      var hookAlias = 'alias_for_hook1';
 
-    it('maps aliased hooks to their original alias', function() {
-      expect(aliasedPlugin.client_hooks[hookName]).to.eq(`${distFile}:f1.${hookAlias}`);
+      before(function(done) {
+        subject([nonAliasedPlugin, aliasedPlugin], [], done);
+      });
+
+      it('lists all files on the client index of provided plugins', function() {
+        expect(lastClientIndex).to.contain('ep_regular_plugin/static/js/index');
+        // make sure alias was removed from file name
+        expect(lastClientIndex).to.contain('ep_plugin_with_alias_for_hook/static/js/index');
+        expect(lastClientIndex).to.not.contain('ep_plugin_with_alias_for_hook/static/js/index:');
+      });
+
+      it('maps non-aliased hooks to the hook name', function() {
+        expect(nonAliasedPlugin.client_hooks[hookName]).to.eq(`${distFile}:f0.${hookName}`);
+      });
+
+      it('maps aliased hooks to their original alias', function() {
+        expect(aliasedPlugin.client_hooks[hookName]).to.eq(`${distFile}:f1.${hookAlias}`);
+      });
     });
   });
 });

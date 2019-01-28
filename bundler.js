@@ -6,10 +6,10 @@ var _ = require('underscore');
 // TODO handle dev & prod environments?
 var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
 
-exports.generateBundle = function(pluginParts, mySettings, done) {
+exports.generateBundle = function(pluginParts, settings, done) {
   exports.buildIndexAndGenerateBundle(
     pluginParts,
-    mySettings,
+    settings,
     saveIndexFile,
     generateDistributionFile,
     done,
@@ -17,9 +17,10 @@ exports.generateBundle = function(pluginParts, mySettings, done) {
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, mySettings, saveClientIndex, generateBundledFile, done) {
+exports.buildIndexAndGenerateBundle = function(pluginParts, settings, saveClientIndex, generateBundledFile, done) {
+  var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
-  var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile);
+  var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile, settings);
 
   var allClientHooks = getAllClientHooks(pluginParts, partsToBeIgnored);
   var filesToBundle = getListOfFilesToBundle(allClientHooks);
@@ -40,9 +41,17 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, mySettings, saveClie
   });
 }
 
-var buildWebpackConfigs = function(customConfigFile) {
+var buildWebpackConfigs = function(customConfigFile, otherSettings) {
   var webpackConfigFile = customConfigFile || DEFAULT_WEBPACK_CONFIG;
-  return require(webpackConfigFile)
+  var webpackConfigs = require(webpackConfigFile);
+
+  // disable minify options on webpack if settings has it turned off
+  if (!otherSettings.minify) {
+    delete webpackConfigs.optimization;
+    delete webpackConfigs.devtool;
+  }
+
+  return webpackConfigs;
 }
 
 /*
