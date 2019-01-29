@@ -25,6 +25,16 @@ module.exports = {
     }),
   ],
 
+  // minimize
+  // Other options: https://webpack.js.org/configuration/devtool/
+  //   - 'inline-cheap-source-map': 12s, 1.8Mb
+  //   - 'cheap-source-map':        12s, 0.8Mb
+  devtool: 'cheap-source-map',
+  optimization: {
+    minimize: true,
+  },
+
+  // watch mode (disabled on production)
   watchOptions: isProduction ? {} : {
     // optimize pooling: don't check dependencies + wait a little bit to check.
     // This avoids having the CPU melting when we have watch mode turned on
