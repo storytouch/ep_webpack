@@ -2,6 +2,7 @@ var path = require('path');
 var webpack = require('webpack');
 
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
+var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 
 var isProduction = process.env.NODE_ENV !== 'development';
 
@@ -35,6 +36,8 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: 'css/all.css',
     }),
+    // Minify CSS files
+    new OptimizeCssAssetsPlugin(),
   ],
 
   // minimize
