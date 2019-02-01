@@ -87,7 +87,7 @@ If you enable this feature and start to see error messages on the server console
 
 The most common type of error is when trying to bundle CSS files. If you see an error message like `Could not load the list of CSS files from aceEditorCSS hook, so its files won't be bundled.`, you'll need to make some changes in order to be able to bundle the CSS files:
 
-- **Extract the hook into a separated file**: [TL;DR:] the most effective way is to change the plugin code in order to extract the `aceEditorCSS` hook into a separated JS file. See [this pull request]() as an example.
+- **Extract the hook into a separated file**: [TL;DR:] the most effective way is to change the plugin code in order to extract the `aceEditorCSS` hook into a separated JS file. See [this pull request](https://github.com/jdittrich/ep_autocomp/pull/40) as an example.
 
   [Long story:] Usually the error when executing the CSS hook happens because the JS file where it is defined needs to be run on the browser context, which is not where it is run when we're bundling the files. For example, the JS file might require `jQuery`:
 
