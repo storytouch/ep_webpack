@@ -5,13 +5,15 @@ var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 
 var isProduction = process.env.NODE_ENV !== 'development';
+var JS_FILENAME = `js/index${isProduction ? '-[hash]': ''}.js`;
+var CSS_FILENAME = `css/all${isProduction ? '-[hash]': ''}.css`;
 
 module.exports = {
   mode: isProduction ? 'production' : 'development',
   entry: path.resolve(__dirname, 'static/js/index.js'),
 
   output: {
-    filename: 'js/index.js',
+    filename: JS_FILENAME,
     path: path.resolve(__dirname, './static/dist'),
     // create bundles with module.exports, so ep.json can access those targets
     libraryTarget: 'commonjs2',
@@ -34,7 +36,7 @@ module.exports = {
 
     // Bundle CSS into a single file
     new MiniCssExtractPlugin({
-      filename: 'css/all.css',
+      filename: CSS_FILENAME,
     }),
     // Minify CSS files
     new OptimizeCssAssetsPlugin(),

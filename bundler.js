@@ -6,7 +6,7 @@ var _ = require('underscore');
 var cssBundler = require('./cssBundler');
 
 var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
-var BUNDLED_CSS = 'ep_webpack/static/dist/css/all.css';
+var isProduction = process.env.NODE_ENV !== 'development';
 
 exports.generateBundle = function(pluginParts, settings, done) {
   exports.buildIndexAndGenerateBundle(
@@ -37,15 +37,15 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
     if (err) {
       done(err);
     } else {
-      generateBundledFile(webpackConfigs, function(err) {
+      generateBundledFile(webpackConfigs, function(err, webpackHash) {
         if (err) {
           done(err);
         } else {
           if (shouldBundleCSS) {
             deleteOriginalCssHooks(allClientHooks, cssHooksToBeSkipped);
           }
-          replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle);
-          generateCssHookFile(externalCssFiles, shouldBundleCSS, createFile, done);
+          replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle, webpackHash);
+          generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, done);
         }
       });
     }
@@ -165,13 +165,13 @@ var generateClientIndex = function(jsFilesToBundle, cssFilesToBundle, createFile
       return [
         '//fonts.googleapis.com/css',
         (...)
-        BUNDLED_CSS
+        'ep_webpack/static/dist/css/all.css'
       ];
     }
 */
-var generateCssHookFile = function(extraCssFilePaths, cssFilesWereBundled, createFile, done) {
-  // include BUNDLED_CSS only if it was generated
-  var allCssFiles = cssFilesWereBundled ? [...extraCssFilePaths, BUNDLED_CSS] : extraCssFilePaths;
+var generateCssHookFile = function(extraCssFilePaths, cssFilesWereBundled, webpackHash, createFile, done) {
+  // include bundled CSS only if it was generated
+  var allCssFiles = cssFilesWereBundled ? [...extraCssFilePaths, bundledCssFilePath(webpackHash)] : extraCssFilePaths;
 
   var fileList = _(allCssFiles).map(function(file) {
     return '"' + file + '"';
@@ -181,6 +181,15 @@ var generateCssHookFile = function(extraCssFilePaths, cssFilesWereBundled, creat
   createFile('static/js/aceEditorCSS.js', fileContent, done);
 }
 
+  // we only add hash to files on non-dev environments
+var bundledCssFilePath = function(webpackHash) {
+  var cssFileName = isProduction ? `all-${webpackHash}.css` : 'all.css';
+  return `ep_webpack/static/dist/css/${cssFileName}`;
+}
+var bundledJsFileName = function(webpackHash) {
+  return isProduction ? `index-${webpackHash}` : 'index';
+}
+
 var saveFile = function(filePath, fileContent, done) {
   var clientIndexPath = path.normalize(path.join(__dirname, filePath));
   fs.writeFile(clientIndexPath, fileContent, done);
@@ -188,15 +197,18 @@ var saveFile = function(filePath, fileContent, done) {
 
 var generateDistributionFile = function(webpackConfigs, done) {
   webpack(webpackConfigs, function(err, stats) {
+    var error;
     if (err || stats.hasErrors()) {
-      done(err || stats.compilation.errors);
-    } else {
-      done();
+      error = err || stats.compilation.errors;
     }
+
+    done(error, stats.hash);
   });
 }
 
-var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles) {
+var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles, webpackHash) {
+  var bundledFile = bundledJsFileName(webpackHash);
+
   _(allClientHooks).each(function(thisPluginHooks) {
     _(thisPluginHooks).each(function(hookPath, hookName) {
       // hookPath might have an alias to the function name, so remove it
@@ -208,7 +220,7 @@ var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles)
       var fileAlias = `f${bundledFiles.indexOf(filePath)}`;
 
       // ex: postAceInit = "ep_webpack/static/dist/js/index:f17.postAceInit"
-      thisPluginHooks[hookName] = `ep_webpack/static/dist/js/index:${fileAlias}.${hookAlias}`;
+      thisPluginHooks[hookName] = `ep_webpack/static/dist/js/${bundledFile}:${fileAlias}.${hookAlias}`;
     });
   })
 }
