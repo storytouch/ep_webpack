@@ -66,17 +66,15 @@ module.exports = {
         test: /jquery.+\.js$/,
         use: 'ep_webpack/node_modules/imports-loader?define=>false',
       },
-
-      // Bundle CSS into a single file
+      // Bundle CSS + SASS
       {
-        test: /\.css$/,
+        test: /\.s?css$/,
         use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-          },
+          { loader: MiniCssExtractPlugin.loader },
           'css-loader',
+          'sass-loader',
         ]
-      }
+      },
     ],
   },
 };
