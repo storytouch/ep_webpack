@@ -229,14 +229,14 @@ var deleteOriginalCssHooks = function(allClientHooks, cssHooksToBeSkipped) {
 // copied from ethepad-lite/src/static/js/pluginfw/shared.js
 var loadFn = function(path, hookName) {
   var functionName
-    , parts = path.split(":");
+    , parts = path.split(':');
 
   // on windows: C:\foo\bar:xyz
   if (parts[0].length == 1) {
     if (parts.length == 3) {
       functionName = parts.pop();
     }
-    path = parts.join(":");
+    path = parts.join(':');
   } else {
     path = parts[0];
     functionName = parts[1];
@@ -245,7 +245,7 @@ var loadFn = function(path, hookName) {
   var fn = require(path);
   functionName = functionName ? functionName : hookName;
 
-  _.each(functionName.split("."), function (name) {
+  _.each(functionName.split('.'), function(name) {
     fn = fn[name];
   });
   return fn;

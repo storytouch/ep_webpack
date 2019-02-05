@@ -56,12 +56,12 @@ exports.analyzeListOfCssFilesToBundle = function(allClientHooks) {
   var pathsNotLoaded = [];
   var allCssFiles = _(jsFilesWithCssHook)
     .chain()
-    .map(function(hookPath) {
+    .map(function(cssHookPath) {
       try {
-        // loads the file on hookPath (which might raise an error if hookPath
+        // loads the file on cssHookPath (which might raise an error if cssHookPath
         // depends on the bowser context -- like having a global `window` var
         // defined, for example)
-        var aceEditorCSS = loadFn(hookPath, 'aceEditorCSS');
+        var aceEditorCSS = loadFn(cssHookPath, 'aceEditorCSS');
         var cssFiles = aceEditorCSS();
 
         // remove "/" on the beginning of the file paths, but only for those that
@@ -73,12 +73,12 @@ exports.analyzeListOfCssFilesToBundle = function(allClientHooks) {
 
         return cleanedCssFiles;
       } catch(error) {
-        console.error(`Error when trying to load "${hookPath}".`);
+        console.error(`Error when trying to load "${cssHookPath}".`);
         console.error(EXTRA_ERROR_INFO1);
         console.error(EXTRA_ERROR_INFO2);
 
         // include hook path on the list of failures
-        pathsNotLoaded.push(hookPath);
+        pathsNotLoaded.push(cssHookPath);
 
         // no CSS file could be loaded for this path
         return [];
