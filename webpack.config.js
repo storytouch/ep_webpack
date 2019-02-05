@@ -1,6 +1,9 @@
 var path = require('path');
 var webpack = require('webpack');
 
+var MiniCssExtractPlugin = require('mini-css-extract-plugin');
+var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+
 var isProduction = process.env.NODE_ENV !== 'development';
 
 module.exports = {
@@ -8,10 +11,15 @@ module.exports = {
   entry: path.resolve(__dirname, 'static/js/index.js'),
 
   output: {
-    filename: 'index.js',
-    path: path.resolve(__dirname, './static/js/dist'),
+    filename: 'js/index.js',
+    path: path.resolve(__dirname, './static/dist'),
     // create bundles with module.exports, so ep.json can access those targets
     libraryTarget: 'commonjs2',
+  },
+
+  // where webpack should look for modules required here
+  resolveLoader: {
+    modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],
   },
 
   plugins: [
@@ -23,6 +31,13 @@ module.exports = {
       // require it when they use that variable
       autocomp: ['ep_autocomp/static/js/index', 'autocomp'],
     }),
+
+    // Bundle CSS into a single file
+    new MiniCssExtractPlugin({
+      filename: 'css/all.css',
+    }),
+    // Minify CSS files
+    new OptimizeCssAssetsPlugin(),
   ],
 
   // minimize
@@ -39,15 +54,26 @@ module.exports = {
     // optimize pooling: don't check dependencies + wait a little bit to check.
     // This avoids having the CPU melting when we have watch mode turned on
     ignored: /ep_*\/node_modules/,
-    poll: 600
+    poll: 1000
   },
 
-  // Disable AMD for jQuery plugins
   module: {
     rules: [
+      // Disable AMD for jQuery plugins
       {
         test: /jquery.+\.js$/,
-        use: "ep_webpack/node_modules/imports-loader?define=>false",
+        use: 'ep_webpack/node_modules/imports-loader?define=>false',
+      },
+
+      // Bundle CSS into a single file
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+          },
+          'css-loader',
+        ]
       }
     ],
   },

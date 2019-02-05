@@ -3,6 +3,7 @@
     {
       "name": "ep_webpack",
       "client_hooks": {
+        "aceEditorCSS": "ep_webpack/static/js/aceEditorCSS",
         "postAceInit": "ep_webpack/static/js/testHelper"
       },
       "hooks": {

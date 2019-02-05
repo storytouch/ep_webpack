@@ -3,29 +3,37 @@ var fs = require('graceful-fs');
 var webpack = require('webpack');
 var _ = require('underscore');
 
-// TODO handle dev & prod environments?
+var cssBundler = require('./cssBundler');
+
 var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
+var BUNDLED_CSS = 'ep_webpack/static/dist/css/all.css';
 
 exports.generateBundle = function(pluginParts, settings, done) {
   exports.buildIndexAndGenerateBundle(
     pluginParts,
     settings,
-    saveIndexFile,
+    saveFile,
     generateDistributionFile,
     done,
   );
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, settings, saveClientIndex, generateBundledFile, done) {
+exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, done) {
   var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
+  var shouldBundleCSS = mySettings.bundleCSS;
   var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile, settings);
 
   var allClientHooks = getAllClientHooks(pluginParts, partsToBeIgnored);
-  var filesToBundle = getListOfFilesToBundle(allClientHooks);
+  var jsFilesToBundle = getListOfJsFilesToBundle(allClientHooks);
 
-  generateClientIndex(filesToBundle, saveClientIndex, function(err) {
+  var cssBundleProps = shouldBundleCSS ? cssBundler.analyzeListOfCssFilesToBundle(allClientHooks) : {};
+  var cssFilesToBundle = cssBundleProps.cssFilesToBundle || [];
+  var externalCssFiles = cssBundleProps.externalCssFiles || [];
+  var cssHooksToBeSkipped = cssBundleProps.cssHooksToBeSkipped || [];
+
+  generateClientIndex(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
     if (err) {
       done(err);
     } else {
@@ -33,8 +41,11 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, saveClient
         if (err) {
           done(err);
         } else {
-          replaceOriginalHookWithBundledHooks(allClientHooks, filesToBundle);
-          done();
+          if (shouldBundleCSS) {
+            deleteOriginalCssHooks(allClientHooks, cssHooksToBeSkipped);
+          }
+          replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle);
+          generateCssHookFile(externalCssFiles, shouldBundleCSS, createFile, done);
         }
       });
     }
@@ -59,7 +70,7 @@ var buildWebpackConfigs = function(customConfigFile, otherSettings) {
     PART_CONFIG: {
       client_hooks: {
         postAceInit: 'ep_myplugin/static/js/file',
-        aceInitialized: 'ep_myplugin/static/js/other_file:aliasedHooke',
+        aceInitialized: 'ep_myplugin/static/js/other_file:aliasedHook',
         (...)
       },
       (...)
@@ -73,9 +84,12 @@ var buildWebpackConfigs = function(customConfigFile, otherSettings) {
     }
 */
 var getAllClientHooks = function(pluginParts, partsToBeIgnored) {
+  // ep_webpack should be ignored by default
+  var allPartsToBeIgnored = _.union(partsToBeIgnored, ['ep_webpack']);
+
   return _(pluginParts)
     .chain()
-    .reject(function(part) { return partsToBeIgnored.includes(part.name) })
+    .reject(function(part) { return allPartsToBeIgnored.includes(part.name) })
     .map(function(part) { return part.client_hooks })
     // remove parts without client hooks
     .compact()
@@ -114,7 +128,7 @@ var getAllClientHooks = function(pluginParts, partsToBeIgnored) {
     (...)
   ]
 */
-var getListOfFilesToBundle = function(allClientHooks) {
+var getListOfJsFilesToBundle = function(allClientHooks) {
   return _(allClientHooks)
     .chain()
     // get hook paths
@@ -135,16 +149,40 @@ var getListOfFilesToBundle = function(allClientHooks) {
     exports.f2 = require("ep_myplugin2/static/js/index");
     (...)
 */
-var generateClientIndex = function(filesToBundle, saveClientIndex, done) {
-  var fileContent = _(filesToBundle).map(function(file, index) {
+var generateClientIndex = function(jsFilesToBundle, cssFilesToBundle, createFile, done) {
+  var allFilesToBundle = [...jsFilesToBundle, ...cssFilesToBundle];
+  var fileContent = _(allFilesToBundle).map(function(file, index) {
     return 'exports.f' + index + ' = require("' + file + '");';
   }).join('\n');
 
-  saveClientIndex(fileContent, done);
+  createFile('static/js/index.js', fileContent, done);
+}
+/*
+  Generate a file on ep_webpack/static/js/aceEditorCSS.js that returns all external CSS
+  files + the bundled CSS.
+  Example:
+    exports.aceEditorCSS = function() {
+      return [
+        '//fonts.googleapis.com/css',
+        (...)
+        BUNDLED_CSS
+      ];
+    }
+*/
+var generateCssHookFile = function(extraCssFilePaths, cssFilesWereBundled, createFile, done) {
+  // include BUNDLED_CSS only if it was generated
+  var allCssFiles = cssFilesWereBundled ? [...extraCssFilePaths, BUNDLED_CSS] : extraCssFilePaths;
+
+  var fileList = _(allCssFiles).map(function(file) {
+    return '"' + file + '"';
+  }).join(',');
+
+  var fileContent = 'exports.aceEditorCSS = function() { return [' + fileList + '] }';
+  createFile('static/js/aceEditorCSS.js', fileContent, done);
 }
 
-var saveIndexFile = function(fileContent, done) {
-  var clientIndexPath = path.normalize(path.join(__dirname, 'static/js/index.js'));
+var saveFile = function(filePath, fileContent, done) {
+  var clientIndexPath = path.normalize(path.join(__dirname, filePath));
   fs.writeFile(clientIndexPath, fileContent, done);
 }
 
@@ -169,8 +207,46 @@ var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles)
       // each bundled file was aliased `f#`, where `#` is its index on `bundledFiles`
       var fileAlias = `f${bundledFiles.indexOf(filePath)}`;
 
-      // ex: postAceInit = "ep_webpack/static/js/dist/index:f17.postAceInit"
-      thisPluginHooks[hookName] = `ep_webpack/static/js/dist/index:${fileAlias}.${hookAlias}`;
+      // ex: postAceInit = "ep_webpack/static/dist/js/index:f17.postAceInit"
+      thisPluginHooks[hookName] = `ep_webpack/static/dist/js/index:${fileAlias}.${hookAlias}`;
     });
   })
 }
+
+var deleteOriginalCssHooks = function(allClientHooks, cssHooksToBeSkipped) {
+  _(allClientHooks)
+    .chain()
+    // remove paths to be skipped
+    .reject(function(thisPluginHooks) {
+      return cssHooksToBeSkipped.includes(thisPluginHooks.aceEditorCSS);
+    })
+    // remove hooks
+    .each(function(thisPluginHooks) {
+      delete thisPluginHooks.aceEditorCSS
+    })
+}
+
+// copied from ethepad-lite/src/static/js/pluginfw/shared.js
+var loadFn = function(path, hookName) {
+  var functionName
+    , parts = path.split(':');
+
+  // on windows: C:\foo\bar:xyz
+  if (parts[0].length == 1) {
+    if (parts.length == 3) {
+      functionName = parts.pop();
+    }
+    path = parts.join(':');
+  } else {
+    path = parts[0];
+    functionName = parts[1];
+  }
+
+  var fn = require(path);
+  functionName = functionName ? functionName : hookName;
+
+  _.each(functionName.split('.'), function(name) {
+    fn = fn[name];
+  });
+  return fn;
+};
