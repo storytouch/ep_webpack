@@ -1,6 +1,27 @@
 # ep_webpack
 Etherpad plugin to bundle files using webpack, thus improving the performance of file loading on client-side.
 
+#### Why should you use this plugin?
+
+Sometimes the browser takes **FOREVER** to load Etherpad editor, especially on instances with a lot of plugins, and with each plugin using a lot of files. On an instance with 30+ plugins and 400+ files to load, it can take **up to a minute** for the pad to be ready to be edited.
+
+By installing this plugin you can speed up this process a lot:
+
+* time to load without `ep_webpack`: **48s** (411 requests);
+* time to load with `ep_webpack` bundling only JS files: **21s** (177 requests);
+* time to load with `ep_webpack` bundling JS + CSS files: **14s** (57 requests);
+
+#### Features:
+
+* **Speeds up Etherpad loading on browser [by 70%](#why-should-you-use-this-plugin)**;
+* Bundle **all plugins by default**, but [allow plugins to be ignored by `webpack`](#ignore-a-plugin)
+* Bundled files are **automatically updated** on [local environment](#development-mode)
+* **Minimize files** on non-dev environments;
+* Allow **[bundle of CSS files](#bundle-css-files-too)**;
+* Allow styling plugins **using SASS**;
+* Provide default webpack configuration, but [allow them to be customized](#use-your-own-set-of-webpack-configs);
+* Use `webpack v.4`;
+
 ## Development mode
 
 This plugin has a _watch_ mode, so you don't need to restart Etherpad every time you change something on the plugin files. To use it, just go the the folder where `ep_webpack` is installed, and run the `watch` command:
@@ -21,10 +42,6 @@ If Docker is your thing, you can add this to your `docker-compose.yml`:
     volumes:
       - path/to/etherpad-lite/:/etherpad-lite/
 ```
-
-## Performance improvements
-
-The more plugins your Etherpad instace uses, the more this plugin can improve the performance of the initial load of the pads. On an instance without any plugin `ep_webpack` won't have any impact; but on an instance with 30 plugins, the time it took to load improved from **48s to 21s** (from 411 requests to 177)! The load time was even faster when [CSS files were also bundled](#bundle-css-files-too): **14s** to load 57 files.
 
 ## How does this plugin work?
 
@@ -102,3 +119,12 @@ The most common type of error is when trying to bundle CSS files. If you see an 
 - **Add the problematic plugin to the list of ignored parts**: if you can't submit a pull request to extract `aceEditorCSS` into a separated file, you can [exclude the plugin from the list of bundled parts](#ignore-a-plugin), so at least the other plugins will be able to be bundled;
 
 - **Disable CSS bundling**: finally, you can [disable the CSS bundling](#bundle-css-files-too) entirely, which will allow you to keep bundling at least the JS files;
+
+## Next improvements
+
+Want to help? Here's a list of future improvements this plugins might have:
+
+* [ ] Re-create bundles when plugins installed/uninstalled via `/admin` route;
+* [ ] Bundle vendor files (`jQuery`, `underscore`, etc) into a separated chunk, in order to improve cache usage. From `webpack` [docs](https://webpack.js.org/guides/caching/#extracting-boilerplate):
+  > It's also good practice to extract third-party libraries, such as `lodash` or `react`, to a separate `vendor` chunk as they are less likely to change than our local source code. This step will allow clients to request even less from the server to stay up to date.
+* [ ] Include Etherpad core files to the bundle (this looks like a hard feature to implement);
