@@ -3,11 +3,17 @@
     {
       "name": "ep_webpack",
       "client_hooks": {
-        "aceEditorCSS": "ep_webpack/static/js/aceEditorCSS",
-        "postAceInit": "ep_webpack/static/js/testHelper"
+        "aceEditorCSS": "ep_webpack/static/js/aceEditorCSS"
       },
       "hooks": {
         "loadSettings": "ep_webpack/index"
+      }
+    },
+    {
+      "comment": "This hook must be on a separated part because it needs to be bundled with the other plugins, otherwise testHelper won't have a reference to the bundled jQuery and tests won't be able to simulate jQuery events",
+      "name": "ep_webpack_tests",
+      "client_hooks": {
+        "postAceInit": "ep_webpack/static/js/testHelper"
       }
     }
   ]
