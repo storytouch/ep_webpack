@@ -1,7 +1,7 @@
 {
   "description": "ep_webpack",
   "name": "ep_webpack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "build": "webpack",
     "watch": "webpack --watch",
