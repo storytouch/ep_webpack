@@ -55,7 +55,7 @@ module.exports = {
   watchOptions: isProduction ? {} : {
     // optimize pooling: don't check dependencies + wait a little bit to check.
     // This avoids having the CPU melting when we have watch mode turned on
-    ignored: /ep_*\/node_modules/,
+    ignored: /ep_.*\/node_modules/,
     poll: 1000
   },
 
@@ -71,8 +71,8 @@ module.exports = {
         test: /\.s?css$/,
         use: [
           { loader: MiniCssExtractPlugin.loader },
-          'css-loader',
-          'sass-loader',
+          { loader: 'css-loader' },
+          { loader: 'fast-sass-loader' },
         ]
       },
     ],
