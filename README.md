@@ -24,10 +24,10 @@ By installing this plugin you can speed up this process a lot:
 
 ## Development mode
 
-This plugin has a _watch_ mode, so you don't need to restart Etherpad every time you change something on the plugin files. To use it, just go the the folder where `ep_webpack` is installed, and run the `watch` command:
+This plugin has a _watch_ mode, so you don't need to restart Etherpad every time you change something on the plugin files. To use it, just go the the folder where `ep_webpack` is installed, and run the `watch` command with the target `webpack.config.*.js` file for your settings:
 
 ```bash
-cd path/to/etherpad-lite/node_modules/ep_webpack && npm run watch
+cd path/to/etherpad-lite/node_modules/ep_webpack && npm run watch -- --config './webpack.config-withMinifyAndCss.js'
 ```
 
 If Docker is your thing, you can add this to your `docker-compose.yml`:
@@ -38,7 +38,7 @@ If Docker is your thing, you can add this to your `docker-compose.yml`:
     image: node:8.9.0
     environment:
       NODE_ENV: "development"
-    command: bash -c "cd /etherpad-lite/node_modules/ep_webpack && npm run watch"
+    command: bash -c "cd /etherpad-lite/node_modules/ep_webpack && npm run watch -- --config './webpack.config-withMinifyAndCss.js'"
     volumes:
       - path/to/etherpad-lite/:/etherpad-lite/
 ```
