@@ -5,12 +5,15 @@ var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 
 var isProduction = process.env.NODE_ENV !== 'development';
-var JS_FILENAME = `js/index${isProduction ? '-[hash]': ''}.js`;
+var JS_FILENAME = `js/[name]${isProduction ? '-[hash]': ''}.js`;
 var CSS_FILENAME = `css/all${isProduction ? '-[hash]': ''}.css`;
 
 module.exports = {
   mode: isProduction ? 'production' : 'development',
-  entry: path.resolve(__dirname, 'static/js/index.js'),
+  entry: {
+    index: path.resolve(__dirname, 'static/js/index.js'),
+    css: path.resolve(__dirname, 'static/js/indexCSS.js'),
+  },
 
   output: {
     filename: JS_FILENAME,

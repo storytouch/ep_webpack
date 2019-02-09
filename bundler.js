@@ -5,6 +5,8 @@ var _ = require('underscore');
 
 var cssBundler = require('./cssBundler');
 
+var JS_INDEX = 'static/js/index.js';
+var CSS_INDEX = 'static/js/indexCSS.js';
 var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
 var isProduction = process.env.NODE_ENV !== 'development';
 
@@ -33,7 +35,7 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
   var externalCssFiles = cssBundleProps.externalCssFiles || [];
   var cssHooksToBeSkipped = cssBundleProps.cssHooksToBeSkipped || [];
 
-  generateClientIndex(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
+  generateClientIndexes(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
     if (err) {
       done(err);
     } else {
@@ -143,20 +145,32 @@ var getListOfJsFilesToBundle = function(allClientHooks) {
 
 /*
   Generate a file on ep_webpack/static/js/index.js that imports all plugin hook paths.
+  Do the same for ep_webpack/static/js/indexCSS.js to all CSS files.
+
   Example:
     exports.f0 = require("ep_myplugin1/static/js/index");
     exports.f1 = require("ep_myplugin2/static/js/other_index");
     exports.f2 = require("ep_myplugin2/static/js/index");
     (...)
 */
-var generateClientIndex = function(jsFilesToBundle, cssFilesToBundle, createFile, done) {
-  var allFilesToBundle = [...jsFilesToBundle, ...cssFilesToBundle];
+var generateClientIndexes = function(jsFilesToBundle, cssFilesToBundle, createFile, done) {
+  generateIndexFile(jsFilesToBundle, JS_INDEX, createFile, function(err) {
+    if (err) {
+      done(err);
+    } else {
+      generateIndexFile(cssFilesToBundle, CSS_INDEX, createFile, done);
+    }
+  });
+}
+
+var generateIndexFile = function(allFilesToBundle, filePath, createFile, done) {
   var fileContent = _(allFilesToBundle).map(function(file, index) {
     return 'exports.f' + index + ' = require("' + file + '");';
   }).join('\n');
 
-  createFile('static/js/index.js', fileContent, done);
+  createFile(filePath, fileContent, done);
 }
+
 /*
   Generate a file on ep_webpack/static/js/aceEditorCSS.js that returns all external CSS
   files + the bundled CSS.
@@ -238,28 +252,3 @@ var deleteOriginalCssHooks = function(allClientHooks, cssHooksToBeSkipped) {
       delete thisPluginHooks.aceEditorCSS
     })
 }
-
-// copied from ethepad-lite/src/static/js/pluginfw/shared.js
-var loadFn = function(path, hookName) {
-  var functionName
-    , parts = path.split(':');
-
-  // on windows: C:\foo\bar:xyz
-  if (parts[0].length == 1) {
-    if (parts.length == 3) {
-      functionName = parts.pop();
-    }
-    path = parts.join(':');
-  } else {
-    path = parts[0];
-    functionName = parts[1];
-  }
-
-  var fn = require(path);
-  functionName = functionName ? functionName : hookName;
-
-  _.each(functionName.split('.'), function(name) {
-    fn = fn[name];
-  });
-  return fn;
-};

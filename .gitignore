@@ -3,4 +3,5 @@ node_modules
 .ep_initialized
 static/dist/*
 static/js/index.js
+static/js/indexCSS.js
 static/js/aceEditorCSS.js
