@@ -5,7 +5,16 @@ var _ = require('underscore');
 
 var cssBundler = require('./cssBundler');
 
-var DEFAULT_WEBPACK_CONFIG = './webpack.config.js';
+var JS_INDEX = 'static/js/index.js';
+var ALL_WEBPACK_CONFIGS = './webpack.config-options.js';
+var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
+var CONFIG_FILES = [
+  { minify: false, css: false, fileName: DEFAULT_WEBPACK_CONFIG_FILE },
+  { minify: true , css: false, fileName: './webpack.config-withMinify.js' },
+  { minify: false, css: true , fileName: './webpack.config-withCss.js' },
+  { minify: true , css: true , fileName: './webpack.config-withCssAndMinify.js' },
+];
+
 var isProduction = process.env.NODE_ENV !== 'development';
 
 exports.generateBundle = function(pluginParts, settings, done) {
@@ -23,7 +32,7 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
   var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
   var shouldBundleCSS = mySettings.bundleCSS;
-  var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile, settings);
+  var webpackConfigs = buildWebpackConfigs(mySettings.customWebpackConfigFile, shouldBundleCSS, settings);
 
   var allClientHooks = getAllClientHooks(pluginParts, partsToBeIgnored);
   var jsFilesToBundle = getListOfJsFilesToBundle(allClientHooks);
@@ -52,17 +61,29 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
   });
 }
 
-var buildWebpackConfigs = function(customConfigFile, otherSettings) {
-  var webpackConfigFile = customConfigFile || DEFAULT_WEBPACK_CONFIG;
-  var webpackConfigs = require(webpackConfigFile);
+var buildWebpackConfigs = function(customConfigFile, shouldBundleCSS, otherSettings) {
+  // if no custom webpack file is provided, load default options and get the one
+  // according to the Etherpad settings
+  var configFileName = customConfigFile || getWebpackConfigFileFor(shouldBundleCSS, otherSettings.minify);
+  return require(configFileName);
+}
 
-  // disable minify options on webpack if settings has it turned off
-  if (!otherSettings.minify) {
-    delete webpackConfigs.optimization;
-    delete webpackConfigs.devtool;
-  }
+var getWebpackConfigFileFor = function(shouldBundleCSS, shouldMinify) {
+  var allWebpackConfigs = require(ALL_WEBPACK_CONFIGS);
 
-  return webpackConfigs;
+  // there are multiple configs defined on ALL_WEBPACK_CONFIGS, depending
+  // on the settings. We need to search for the specific one according to
+  // those settings
+  var targetConfig = _(CONFIG_FILES).findWhere({
+    minify: shouldMinify,
+    css: shouldBundleCSS,
+  });
+
+  // use default config if didn't find any. This should not happen, but
+  // let's be extra cautious here
+  var configFileName = (targetConfig || {}).fileName || DEFAULT_WEBPACK_CONFIG_FILE;
+
+  return configFileName;
 }
 
 /*
@@ -151,12 +172,17 @@ var getListOfJsFilesToBundle = function(allClientHooks) {
 */
 var generateClientIndex = function(jsFilesToBundle, cssFilesToBundle, createFile, done) {
   var allFilesToBundle = [...jsFilesToBundle, ...cssFilesToBundle];
+  generateIndexFile(allFilesToBundle, JS_INDEX, createFile, done);
+}
+
+var generateIndexFile = function(allFilesToBundle, filePath, createFile, done) {
   var fileContent = _(allFilesToBundle).map(function(file, index) {
     return 'exports.f' + index + ' = require("' + file + '");';
   }).join('\n');
 
-  createFile('static/js/index.js', fileContent, done);
+  createFile(filePath, fileContent, done);
 }
+
 /*
   Generate a file on ep_webpack/static/js/aceEditorCSS.js that returns all external CSS
   files + the bundled CSS.
@@ -238,28 +264,3 @@ var deleteOriginalCssHooks = function(allClientHooks, cssHooksToBeSkipped) {
       delete thisPluginHooks.aceEditorCSS
     })
 }
-
-// copied from ethepad-lite/src/static/js/pluginfw/shared.js
-var loadFn = function(path, hookName) {
-  var functionName
-    , parts = path.split(':');
-
-  // on windows: C:\foo\bar:xyz
-  if (parts[0].length == 1) {
-    if (parts.length == 3) {
-      functionName = parts.pop();
-    }
-    path = parts.join(':');
-  } else {
-    path = parts[0];
-    functionName = parts[1];
-  }
-
-  var fn = require(path);
-  functionName = functionName ? functionName : hookName;
-
-  _.each(functionName.split('.'), function(name) {
-    fn = fn[name];
-  });
-  return fn;
-};
