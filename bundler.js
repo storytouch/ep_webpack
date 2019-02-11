@@ -12,7 +12,7 @@ var CONFIG_FILES = [
   { minify: false, css: false, fileName: DEFAULT_WEBPACK_CONFIG_FILE },
   { minify: true , css: false, fileName: './webpack.config-withMinify.js' },
   { minify: false, css: true , fileName: './webpack.config-withCss.js' },
-  { minify: true , css: true , fileName: './webpack.config-withCssAndMinify.js' },
+  { minify: true , css: true , fileName: './webpack.config-withMinifyAndCss.js' },
 ];
 
 var isProduction = process.env.NODE_ENV !== 'development';
