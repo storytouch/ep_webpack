@@ -23,6 +23,7 @@ var buildBundle = function(settings) {
   // restore original plugin parts, so we can re-generate using them as reference
   plugins.parts = deepCopyOf(originalParts);
 
+  console.log("ep_webpack: starting to generate bundle...");
   bundler.generateBundle(plugins.parts, settings, function(err) {
     // TODO handle error when generating bundle
     if (err) {
@@ -32,5 +33,7 @@ var buildBundle = function(settings) {
       // This line was copied from `plugins.update()`.
       plugins.hooks = pluginUtils.extractHooks(plugins.parts, "hooks", plugins.pathNormalization);
     }
+
+    console.log("ep_webpack: bundle completed!");
   });
 }
