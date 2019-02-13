@@ -12,12 +12,14 @@
     "url": "https://github.com/lpagliari"
   },
   "dependencies": {
+    "create-symlink-webpack-plugin": "^1.0.0",
     "css-loader": "^2.1.0",
     "fast-sass-loader": "^1.4.7",
     "graceful-fs": "^4.1.15",
     "imports-loader": "^0.8.0",
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
+    "noop-webpack-plugin": "^1.0.1",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
     "sass-loader": "^7.1.0",
     "underscore": "^1.9.1",
