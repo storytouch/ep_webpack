@@ -4,10 +4,13 @@ var merge = require('webpack-merge');
 
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+var CreateSymlinkPlugin = require('create-symlink-webpack-plugin');
+var doNothing = require('noop-webpack-plugin');
 
 var isProduction = process.env.NODE_ENV !== 'development';
 var JS_FILENAME = `js/index${isProduction ? '-[hash]': ''}.js`;
 var CSS_FILENAME = `css/all${isProduction ? '-[hash]': ''}.css`;
+var CSS_SIMPLE_FILENAME = 'css/all.css';
 
 var baseConfigs = {
   mode: isProduction ? 'production' : 'development',
@@ -68,11 +71,16 @@ var minifyConfigs = {
 
 // configs specific for when we need to bundle CSS files
 var cssConfigs = {
-  // Bundle CSS into a single file
   plugins: [
+    // Bundle CSS into a single file
     new MiniCssExtractPlugin({
       filename: CSS_FILENAME,
     }),
+    // Create an alias "all.css" -> "all-[hash].css"
+    (CSS_FILENAME !== CSS_SIMPLE_FILENAME) ? new CreateSymlinkPlugin({
+      origin: CSS_FILENAME,
+      symlink: CSS_SIMPLE_FILENAME
+    }) : doNothing(),
   ],
 
   // Bundle CSS + SASS
