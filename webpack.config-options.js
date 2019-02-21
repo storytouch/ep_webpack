@@ -4,8 +4,7 @@ var merge = require('webpack-merge');
 
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
-var CreateSymlinkPlugin = require('./create-symlink-webpack-plugin');
-// var CreateSymlinkPlugin = require('create-symlink-webpack-plugin');
+var CreateSymlinkPlugin = require('create-symlink-webpack-plugin');
 var doNothing = require('noop-webpack-plugin');
 
 var isProduction = process.env.NODE_ENV !== 'development';

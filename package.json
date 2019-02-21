@@ -12,7 +12,7 @@
     "url": "https://github.com/lpagliari"
   },
   "dependencies": {
-    "create-symlink-webpack-plugin": "^1.0.0",
+    "create-symlink-webpack-plugin": "^1.0.1",
     "css-loader": "^2.1.0",
     "fast-sass-loader": "^1.4.7",
     "graceful-fs": "^4.1.15",
