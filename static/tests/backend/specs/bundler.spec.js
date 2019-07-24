@@ -48,6 +48,7 @@ describe('Plugin Bundler', function() {
 
     context('when settings has "minify" flag turned on', function() {
       before(function(done) {
+        this.timeout(5000);
         subject({ minify: true }, done);
       });
 
