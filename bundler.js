@@ -6,7 +6,6 @@ var _ = require('underscore');
 var cssBundler = require('./cssBundler');
 
 var JS_INDEX = 'static/js/index.js';
-var ALL_WEBPACK_CONFIGS = './webpack.config-options.js';
 var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
 var CONFIG_FILES = [
   { minify: false, css: false, fileName: DEFAULT_WEBPACK_CONFIG_FILE },
@@ -69,14 +68,13 @@ var buildWebpackConfigs = function(customConfigFile, shouldBundleCSS, otherSetti
 }
 
 var getWebpackConfigFileFor = function(shouldBundleCSS, shouldMinify) {
-  var allWebpackConfigs = require(ALL_WEBPACK_CONFIGS);
-
-  // there are multiple configs defined on ALL_WEBPACK_CONFIGS, depending
+  // there are multiple configs defined on CONFIG_FILES, depending
   // on the settings. We need to search for the specific one according to
   // those settings
   var targetConfig = _(CONFIG_FILES).findWhere({
-    minify: shouldMinify,
-    css: shouldBundleCSS,
+    // Use `!!` to force values to be booleans
+    minify: !!shouldMinify,
+    css: !!shouldBundleCSS,
   });
 
   // use default config if didn't find any. This should not happen, but

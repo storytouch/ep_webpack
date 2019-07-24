@@ -1,2 +1,2 @@
 var webpackOptions = require('./webpack.config-options');
-module.exports = webpackOptions.baseConfigs;
+module.exports = webpackOptions.default;
