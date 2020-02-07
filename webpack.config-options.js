@@ -54,6 +54,14 @@ var baseConfigs = {
         test: /jquery.+\.js$/,
         use: 'ep_webpack/node_modules/imports-loader?define=>false',
       },
+      // Allow usage of web workers by the plugins. Their name should be *.worker.js
+      {
+        test: /\.worker\.js$/,
+        use: {
+          loader: 'worker-loader',
+          options: { inline: true },
+        }
+      },
     ],
   },
 };
