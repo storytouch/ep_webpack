@@ -1,8 +1,8 @@
 // override method to create pads, so we can inject the bundled jQuery on padChrome$
 var _newPad = helper.newPad;
 
-helper.newPad = function(cb, padName) {
-  return _newPad(function() {
+helper.newPad = function(cb, padName, opts) {
+  var customCb = function() {
     // get the bundled jQuery and inject it into padChrome$
     var thisPlugin = helper.padChrome$.window.pad.plugins.ep_webpack;
 
@@ -19,5 +19,10 @@ helper.newPad = function(cb, padName) {
     }
 
     cb();
-  }, padName);
-}
+  };
+
+  opts = opts || {};
+  opts.cb = customCb;
+
+  _newPad(opts, padName);
+};
