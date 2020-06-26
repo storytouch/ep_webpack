@@ -39,12 +39,18 @@ var baseConfigs = {
     }),
   ],
 
+  // only watch change on non-production environments
+  watch: isProduction ? false : true,
+
   // watch mode (disabled on production)
   watchOptions: isProduction ? {} : {
     // optimize pooling: don't check dependencies + wait a little bit to check.
     // This avoids having the CPU melting when we have watch mode turned on
     ignored: /ep_.*\/node_modules/,
-    poll: 1000
+    aggregateTimeout: 600,
+    // Watching does not work with NFS and machines in VirtualBox. So if this
+    // is your case uncomment this line below
+    // poll: 4000
   },
 
   module: {
