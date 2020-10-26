@@ -251,10 +251,17 @@ var replaceOriginalHookWithBundledHooks = function(allClientHooks, bundledFiles,
       var hookAlias = hookParts[1] || hookName;
 
       // each bundled file was aliased `f#`, where `#` is its index on `bundledFiles`
-      var fileAlias = `f${bundledFiles.indexOf(filePath)}`;
+      var index = bundledFiles.indexOf(filePath);
 
-      // ex: postAceInit = "ep_webpack/static/dist/js/index:f17.postAceInit"
-      thisPluginHooks[hookName] = `ep_webpack/static/dist/js/${bundledFile}:${fileAlias}.${hookAlias}`;
+      // here, we avoid adding a not found file and skip
+      // ep_webpack/static/dist/js/index file
+      var filePathNotFound = index === -1;
+      if (!filePathNotFound) {
+        var fileAlias = `f${index}`;
+
+        // ex: postAceInit = "ep_webpack/static/dist/js/index:f17.postAceInit"
+        thisPluginHooks[hookName] = `ep_webpack/static/dist/js/${bundledFile}:${fileAlias}.${hookAlias}`;
+      }
     });
   })
 }
