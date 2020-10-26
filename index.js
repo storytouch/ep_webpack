@@ -28,7 +28,8 @@ var buildBundle = function(settings) {
   bundler.generateBundle(pluginDefs.parts, settings, function(err) {
     // TODO handle error when generating bundle
     if (err) {
-      throw err;
+      // we cant' throw error here otherwise etherpad will stop
+      console.log('ep_webpack: error on generating the bundle');
     } else {
       // re-generate hooks, so the new source is retrieved when pad is loaded.
       // This line was copied from `pluginDefs.update()`.
