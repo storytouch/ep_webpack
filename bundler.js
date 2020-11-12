@@ -43,17 +43,25 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
 
   generateClientIndex(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
     if (err) {
+      console.log('erro 1');
+      console.log({ err });
       done(err);
     } else {
       generateBundledFile(webpackConfigs, function(err, webpackHash) {
         if (err) {
+          console.log('erro 2');
+          console.log({ err });
           done(err);
         } else {
           if (shouldBundleCSS) {
             deleteOriginalCssHooks(allClientHooks, cssHooksToBeSkipped);
           }
           replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle, webpackHash);
-          generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, done);
+          generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, function() {
+            // now we need to call the minify again! Otherwise the Etherpad
+            // version minified will have the wrong values
+            removeCacheFile();
+          });
         }
       });
     }
@@ -218,6 +226,26 @@ var bundledJsFileName = function(webpackHash) {
 var saveFile = function(filePath, fileContent, done) {
   var clientIndexPath = path.normalize(path.join(__dirname, filePath));
   fs.writeFile(clientIndexPath, fileContent, done);
+}
+
+// copied from https://stackoverflow.com/questions/27072866
+var removeCacheFile = function() {
+  console.log('............................................');
+  console.log('trying to remove something!');
+  var cacheFilesFolder = path.normalize(path.join(__dirname, '../../var/'));
+  console.log('cacheFilesFolder');
+  console.log(cacheFilesFolder);
+  console.log('............................................');
+  fs.readdir(cacheFilesFolder, (err, files) => {
+    if (err) throw err;
+
+    for (const file of files) {
+      console.log('**************** removing ' + file + '  ***********************')
+      fs.unlink(path.join(cacheFilesFolder, file), err => {
+        if (err) throw err;
+      });
+    }
+  });
 }
 
 var generateDistributionFile = function(webpackConfigs, done) {

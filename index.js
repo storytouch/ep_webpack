@@ -28,6 +28,8 @@ var buildBundle = function(settings) {
   bundler.generateBundle(pluginDefs.parts, settings, function(err) {
     // TODO handle error when generating bundle
     if (err) {
+      console.log('******************** deu ruim!******************** deu ruim!');
+      console.log({err});
       throw err;
     } else {
       // re-generate hooks, so the new source is retrieved when pad is loaded.
