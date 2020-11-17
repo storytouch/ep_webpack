@@ -4,10 +4,10 @@ var webpack = require('webpack');
 var _ = require('underscore');
 
 var cssBundler = require('./cssBundler');
+var shared = require('./shared');
 
 var JS_INDEX = 'static/js/index.js';
 var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
-var WEBPACK_FILES_GENERATED_EVENT = 'webpack_files_generated';
 var CONFIG_FILES = [
   { minify: false, css: false, fileName: DEFAULT_WEBPACK_CONFIG_FILE },
   { minify: true , css: false, fileName: './webpack.config-withMinify.js' },
@@ -15,7 +15,6 @@ var CONFIG_FILES = [
   { minify: true , css: true , fileName: './webpack.config-withMinifyAndCss.js' },
 ];
 
-exports.WEBPACK_FILES_GENERATED_EVENT = WEBPACK_FILES_GENERATED_EVENT;
 var isProduction = process.env.NODE_ENV !== 'development';
 
 exports.generateBundle = function(pluginParts, settings, editorEmitter, done) {
@@ -60,8 +59,8 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
             // emit an event when the files generated are created. This check
             // may be useful to control when the service is ready to receive
             // requests
-            console.log('emitting the event ' + WEBPACK_FILES_GENERATED_EVENT);
-            editorEmitter.emit(WEBPACK_FILES_GENERATED_EVENT);
+            editorEmitter.emit(shared.WEBPACK_FILES_GENERATED_EVENT);
+
             done();
           });
         }
