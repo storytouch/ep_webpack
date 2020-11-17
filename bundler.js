@@ -7,6 +7,7 @@ var cssBundler = require('./cssBundler');
 
 var JS_INDEX = 'static/js/index.js';
 var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
+var WEBPACK_FILES_GENERATED_EVENT = 'webpack_files_generated';
 var CONFIG_FILES = [
   { minify: false, css: false, fileName: DEFAULT_WEBPACK_CONFIG_FILE },
   { minify: true , css: false, fileName: './webpack.config-withMinify.js' },
@@ -14,20 +15,22 @@ var CONFIG_FILES = [
   { minify: true , css: true , fileName: './webpack.config-withMinifyAndCss.js' },
 ];
 
+exports.WEBPACK_FILES_GENERATED_EVENT = WEBPACK_FILES_GENERATED_EVENT;
 var isProduction = process.env.NODE_ENV !== 'development';
 
-exports.generateBundle = function(pluginParts, settings, done) {
+exports.generateBundle = function(pluginParts, settings, editorEmitter, done) {
   exports.buildIndexAndGenerateBundle(
     pluginParts,
     settings,
     saveFile,
     generateDistributionFile,
+    editorEmitter,
     done,
   );
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, done) {
+exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, editorEmitter, done) {
   var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
   var shouldBundleCSS = mySettings.bundleCSS;
@@ -43,14 +46,10 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
 
   generateClientIndex(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
     if (err) {
-      console.log('erro 1');
-      console.log({ err });
       done(err);
     } else {
       generateBundledFile(webpackConfigs, function(err, webpackHash) {
         if (err) {
-          console.log('erro 2');
-          console.log({ err });
           done(err);
         } else {
           if (shouldBundleCSS) {
@@ -58,9 +57,12 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
           }
           replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle, webpackHash);
           generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, function() {
-            // now we need to call the minify again! Otherwise the Etherpad
-            // version minified will have the wrong values
-            removeCacheFile();
+            // emit an event when the files generated are created. This check
+            // may be useful to control when the service is ready to receive
+            // requests
+            console.log('emitting the event ' + WEBPACK_FILES_GENERATED_EVENT);
+            editorEmitter.emit(WEBPACK_FILES_GENERATED_EVENT);
+            done();
           });
         }
       });
@@ -226,26 +228,6 @@ var bundledJsFileName = function(webpackHash) {
 var saveFile = function(filePath, fileContent, done) {
   var clientIndexPath = path.normalize(path.join(__dirname, filePath));
   fs.writeFile(clientIndexPath, fileContent, done);
-}
-
-// copied from https://stackoverflow.com/questions/27072866
-var removeCacheFile = function() {
-  console.log('............................................');
-  console.log('trying to remove something!');
-  var cacheFilesFolder = path.normalize(path.join(__dirname, '../../var/'));
-  console.log('cacheFilesFolder');
-  console.log(cacheFilesFolder);
-  console.log('............................................');
-  fs.readdir(cacheFilesFolder, (err, files) => {
-    if (err) throw err;
-
-    for (const file of files) {
-      console.log('**************** removing ' + file + '  ***********************')
-      fs.unlink(path.join(cacheFilesFolder, file), err => {
-        if (err) throw err;
-      });
-    }
-  });
 }
 
 var generateDistributionFile = function(webpackConfigs, done) {
