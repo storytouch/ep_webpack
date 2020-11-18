@@ -4,6 +4,7 @@ var webpack = require('webpack');
 var _ = require('underscore');
 
 var cssBundler = require('./cssBundler');
+var shared = require('./shared');
 
 var JS_INDEX = 'static/js/index.js';
 var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
@@ -16,18 +17,19 @@ var CONFIG_FILES = [
 
 var isProduction = process.env.NODE_ENV !== 'development';
 
-exports.generateBundle = function(pluginParts, settings, done) {
+exports.generateBundle = function(pluginParts, settings, editorEmitter, done) {
   exports.buildIndexAndGenerateBundle(
     pluginParts,
     settings,
     saveFile,
     generateDistributionFile,
+    editorEmitter,
     done,
   );
 }
 
 // Expose this method to be able to test it
-exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, done) {
+exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, editorEmitter, done) {
   var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
   var shouldBundleCSS = mySettings.bundleCSS;
@@ -53,7 +55,14 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
             deleteOriginalCssHooks(allClientHooks, cssHooksToBeSkipped);
           }
           replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle, webpackHash);
-          generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, done);
+          generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, function() {
+            // emit an event when the files generated are created. This check
+            // may be useful to control when the service is ready to receive
+            // requests
+            editorEmitter.emit(shared.WEBPACK_FILES_GENERATED_EVENT);
+
+            done();
+          });
         }
       });
     }
