@@ -1,18 +1,5 @@
-var eventEmitter = require('events');
+var EventEmitter = require('events').EventEmitter;
 
-class editorEvent {
-  constructor() {
-    const instance = this.constructor.instance;
-    if (instance) {
-      return instance;
-    }
+class EditorEventEmitter extends EventEmitter {}
 
-    this.constructor.instance = this;
-    this.editorEmitter = new eventEmitter();
-  }
-
-  getEventEmitter() {
-    return this.editorEmitter;
-  }
-}
-exports.editorEvent = editorEvent;
+exports.editorEvent = new EditorEventEmitter();

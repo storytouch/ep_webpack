@@ -2,7 +2,6 @@ var plugins = require('ep_etherpad-lite/static/js/pluginfw/plugins');
 var pluginDefs = require('ep_etherpad-lite/static/js/pluginfw/plugin_defs');
 var pluginUtils = require('ep_etherpad-lite/static/js/pluginfw/shared');
 var bundler = require('./bundler');
-var editorEvent = require('./editorEventEmitter').editorEvent;
 
 // rebuild bundles
 // TODO implement them
@@ -11,25 +10,22 @@ exports.pluginInstall = function(hook, context) {};
 
 // build bundle for the first time
 exports.loadSettings = function(hook, context) {
-  // instantiate the singleton instance of the editor event emitter
-  var editorEmitter = new editorEvent().getEventEmitter();
-
   // store a copy of original plugin parts, so we can re-generate them later
   originalParts = deepCopyOf(pluginDefs.parts);
 
-  buildBundle(context.settings, editorEmitter);
+  buildBundle(context.settings);
 };
 
 var deepCopyOf = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 };
 
-var buildBundle = function(settings, editorEmitter) {
+var buildBundle = function(settings) {
   // restore original plugin parts, so we can re-generate using them as reference
   pluginDefs.parts = deepCopyOf(originalParts);
 
   console.log('ep_webpack: starting to generate bundle...');
-  bundler.generateBundle(pluginDefs.parts, settings, editorEmitter, function(err) {
+  bundler.generateBundle(pluginDefs.parts, settings, function(err) {
     // TODO handle error when generating bundle
     if (err) {
       throw err;
