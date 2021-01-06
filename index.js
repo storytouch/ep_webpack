@@ -9,7 +9,7 @@ exports.pluginUninstall = function(hook, context) {};
 exports.pluginInstall = function(hook, context) {};
 
 // build bundle for the first time
-exports.loadSettings = async function(hook, context) {
+exports.loadSettings = function(hook, context) {
   // store a copy of original plugin parts, so we can re-generate them later
   originalParts = deepCopyOf(pluginDefs.parts);
 
