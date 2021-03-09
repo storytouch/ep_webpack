@@ -6,6 +6,7 @@ var _ = require('underscore');
 var cssBundler = require('./cssBundler');
 var shared = require('./shared');
 var editorEvent = require('./editorEventEmitter').editorEvent;
+const {log} = require('console');
 
 var JS_INDEX = 'static/js/index.js';
 var DEFAULT_WEBPACK_CONFIG_FILE = './webpack.config-default.js';
@@ -30,6 +31,8 @@ exports.generateBundle = function(pluginParts, settings, done) {
 
 // Expose this method to be able to test it
 exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile, generateBundledFile, done) {
+  console.log('******************************************')
+  console.log('buildIndexAndGenerateBundle start')
   var mySettings = settings.ep_webpack || {};
   var partsToBeIgnored = mySettings.ignoredParts || [];
   var shouldBundleCSS = mySettings.bundleCSS;
@@ -44,10 +47,14 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
   var cssHooksToBeSkipped = cssBundleProps.cssHooksToBeSkipped || [];
 
   generateClientIndex(jsFilesToBundle, cssFilesToBundle, createFile, function(err) {
+    console.log('generateClientIndex error:', {err})
     if (err) {
       done(err);
     } else {
+      console.log('******************************************')
+      console.log('generateBundledFile start')
       generateBundledFile(webpackConfigs, function(err, webpackHash) {
+        console.log('generateBundledFile error:', {err})
         if (err) {
           done(err);
         } else {
@@ -55,7 +62,11 @@ exports.buildIndexAndGenerateBundle = function(pluginParts, settings, createFile
             deleteOriginalCssHooks(allClientHooks, cssHooksToBeSkipped);
           }
           replaceOriginalHookWithBundledHooks(allClientHooks, jsFilesToBundle, webpackHash);
+          console.log('******************************************')
+          console.log('generateCssHookFile start')
           generateCssHookFile(externalCssFiles, shouldBundleCSS, webpackHash, createFile, function() {
+            console.log('******************************************')
+            console.log('emitindo evento')
             // emit an event when the files generated are created. This check
             // may be useful to control when the service is ready to receive
             // requests
