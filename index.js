@@ -3,6 +3,10 @@ var pluginDefs = require('ep_etherpad-lite/static/js/pluginfw/plugin_defs');
 var pluginUtils = require('ep_etherpad-lite/static/js/pluginfw/shared');
 var bundler = require('./bundler');
 
+function() {
+  console.log('nada');
+}
+
 // rebuild bundles
 // TODO implement them
 exports.pluginUninstall = function(hook, context) {};
