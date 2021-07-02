@@ -4,7 +4,7 @@ var pluginUtils = require('ep_etherpad-lite/static/js/pluginfw/shared');
 var bundler = require('./bundler');
 
 function() {
-  console.log('nada');
+  console.log('alguma coisa');
 }
 
 // rebuild bundles
