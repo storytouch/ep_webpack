@@ -4,8 +4,12 @@ var _ = require('underscore');
 var buildIndexAndGenerateBundle = require('../../../../bundler').buildIndexAndGenerateBundle;
 var plugins = require('../fixtures/plugin_parts');
 
-var bundledJsFile = 'ep_webpack/static/dist/js/index';
-var bundledCssFile = 'ep_webpack/static/dist/css/all.css';
+// freezes the hash value to test Webpack output easily
+var isProduction = process.env.NODE_ENV !== 'development';
+var SOME_HASH = 'some_hash';
+
+var bundledJsFile = `ep_webpack/static/dist/js/index${isProduction ? '-' + SOME_HASH : ''}`;
+var bundledCssFile = `ep_webpack/static/dist/css/all${isProduction ? '-' + SOME_HASH : ''}.css`;
 
 describe('Plugin Bundler', function() {
   var deepCopyOf = function(obj) {
@@ -34,7 +38,7 @@ describe('Plugin Bundler', function() {
   var lastWebpackConfigs;
   var generateBundledFile = function(webpackConfigs, done) {
     lastWebpackConfigs = webpackConfigs;
-    done();
+    done(null, SOME_HASH);
   };
 
   describe('webpack configs used to bundle files', function() {
