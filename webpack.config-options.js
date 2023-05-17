@@ -8,8 +8,8 @@ var CreateSymlinkPlugin = require('create-symlink-webpack-plugin');
 var doNothing = require('noop-webpack-plugin');
 
 var isProduction = process.env.NODE_ENV !== 'development';
-var JS_FILENAME = `js/index${isProduction ? '-[hash]': ''}.js`;
-var CSS_FILENAME = `css/all${isProduction ? '-[hash]': ''}.css`;
+var JS_FILENAME = `js/index${isProduction ? '-[hash]' : ''}.js`;
+var CSS_FILENAME = `css/all${isProduction ? '-[hash]' : ''}.css`;
 var CSS_SIMPLE_FILENAME = 'css/all.css';
 
 var baseConfigs = {
@@ -59,6 +59,22 @@ var baseConfigs = {
   module: {
     rules: [
       // Disable AMD for jQuery plugins
+      // {
+      //   test: /jquery.+\.js$/,
+      //   use: [
+      //     {
+      //       loader: "imports-loader",
+      //       options: {
+      //         imports: {
+      //           moduleName: "jquery",
+      //           name: "$",
+      //         },
+      //         additionalCode:
+      //           "var define = false; /* Disable AMD for misbehaving libraries */",
+      //       },
+      //     }
+      //   ],
+      // },
       {
         test: /jquery.+\.js$/,
         use: 'ep_webpack/node_modules/imports-loader?define=>false',
